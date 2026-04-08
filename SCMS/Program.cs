@@ -72,7 +72,10 @@ using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var db = services.GetRequiredService<ApplicationDbContext>();
-    db.Database.Migrate();
+    if (db.Database.IsRelational())
+        db.Database.Migrate();
+    else
+        db.Database.EnsureCreated();
     await IdentitySeeder.SeedAdminUserAsync(services);
 }
 
@@ -109,3 +112,6 @@ app.MapControllerRoute(
 ThemeAssetManager.EnsureThemeAssets();
 
 app.Run();
+
+// Expose for integration tests
+public partial class Program { }
