@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Text;
 using SCMS.Models;
-using SCMS.Services.Theme;
 using SCMS.Services.Template;
+using SCMS.Constants;
 using System.Security.Claims;
 
 namespace SCMS.Classes
@@ -12,7 +12,7 @@ namespace SCMS.Classes
     public static class MenuBuilder
     {
         // Generates the complete HTML for a menu group with a given orientation (horizontal or vertical)
-        public static string GenerateMenuHtml(ApplicationDbContext db, string group, string orientation, ClaimsPrincipal user)
+        public static string GenerateMenuHtml(ApplicationDbContext db, string group, string orientation, ClaimsPrincipal user, string? themeName = null)
         {
             var allItems = db.MenuItems
                 .Where(m => m.MenuGroup == group && m.IsVisible)
@@ -21,15 +21,18 @@ namespace SCMS.Classes
 
             if (!allItems.Any()) return "";
 
+            // Load security context once for the entire menu render
+            var securityContext = LoadSecurityContext(db, user);
+
             var topLevelItems = allItems
-            .Where(m => m.ParentId == null && IsMenuItemAuthorized(db, m, user))
+            .Where(m => m.ParentId == null && IsMenuItemAuthorized(m, securityContext))
             .ToList();
 
 
             // Convert to MenuRenderModel
             var model = new MenuRenderModel
             {
-                Items = topLevelItems.Select(t => ConvertToModel(t, allItems, db, user)).ToList()
+                Items = topLevelItems.Select(t => ConvertToModel(t, allItems, db, securityContext)).ToList()
             };
 
             var context = new Dictionary<string, object>
@@ -39,7 +42,7 @@ namespace SCMS.Classes
             };
 
             // Locate theme and template
-            var theme = ThemeManager.GetCurrentTheme(); // Replace with actual theme getter if needed
+            var theme = themeName ?? "Default";
             var templatePath = Path.Combine("Themes", theme, "partials", "menu.template.html");
 
             if (System.IO.File.Exists(templatePath))
@@ -63,7 +66,7 @@ namespace SCMS.Classes
             }
         }
         // Converts a MenuItem to a MenuItemModel for rendering
-        private static MenuItemModel ConvertToModel(MenuItem item, List<MenuItem> allItems, ApplicationDbContext db, ClaimsPrincipal user)
+        private static MenuItemModel ConvertToModel(MenuItem item, List<MenuItem> allItems, ApplicationDbContext db, MenuSecurityContext securityContext)
         {
             string url = "#";
 
@@ -76,9 +79,9 @@ namespace SCMS.Classes
             }
 
             var children = allItems
-                .Where(m => m.ParentId == item.Id && IsMenuItemAuthorized(db, m, user))
+                .Where(m => m.ParentId == item.Id && IsMenuItemAuthorized(m, securityContext))
                 .OrderBy(m => m.Order)
-                .Select(child => ConvertToModel(child, allItems, db, user))
+                .Select(child => ConvertToModel(child, allItems, db, securityContext))
                 .ToList();
 
             return new MenuItemModel
@@ -125,34 +128,56 @@ namespace SCMS.Classes
             html.Append("</li>");
             return html.ToString();
         }
-        // TODO: When building the admin group manager, replace this logic with role-to-user resolution
-        // that supports dynamic group membership and custom role assignments.
-        private static bool IsMenuItemAuthorized(ApplicationDbContext db, MenuItem item, ClaimsPrincipal user)
+        // Pre-loads all security data needed for menu authorization in a single pass
+        private static MenuSecurityContext LoadSecurityContext(ApplicationDbContext db, ClaimsPrincipal user)
         {
-            if (item.SecurityLevelId == 3)
+            var anonymousLevel = db.SecurityLevels
+                .FirstOrDefault(s => s.Name == SecurityLevelNames.Anonymous);
+
+            var allRoleMappings = db.SecurityLevelRoles.ToList();
+
+            var userRoles = user.Identity?.IsAuthenticated == true
+                ? allRoleMappings
+                    .Select(r => r.RoleName)
+                    .Distinct()
+                    .Where(user.IsInRole)
+                    .ToList()
+                : new List<string>();
+
+            int? userMinLevel = userRoles.Any()
+                ? allRoleMappings
+                    .Where(r => userRoles.Contains(r.RoleName))
+                    .Min(r => r.SecurityLevelId)
+                : null;
+
+            return new MenuSecurityContext
+            {
+                IsAuthenticated = user.Identity?.IsAuthenticated ?? false,
+                AnonymousLevelId = anonymousLevel?.Id,
+                UserMinSecurityLevelId = userMinLevel
+            };
+        }
+
+        private static bool IsMenuItemAuthorized(MenuItem item, MenuSecurityContext ctx)
+        {
+            // Anonymous items are always visible
+            if (ctx.AnonymousLevelId.HasValue && item.SecurityLevelId == ctx.AnonymousLevelId.Value)
                 return true;
 
-            if (!user.Identity?.IsAuthenticated ?? true)
+            if (!ctx.IsAuthenticated)
                 return false;
 
-            // Get all roles assigned to this user
-            var roleNames = db.SecurityLevelRoles
-                .Select(r => r.RoleName)
-                .Distinct()
-                .ToList();
+            if (!ctx.UserMinSecurityLevelId.HasValue)
+                return false;
 
-            var userRoles = roleNames
-                .Where(user.IsInRole)
-                .ToList();
+            return ctx.UserMinSecurityLevelId.Value <= item.SecurityLevelId;
+        }
 
-            if (!userRoles.Any()) return false;
-
-            // Get minimum security level ID for user’s roles
-            var userMinLevel = db.SecurityLevelRoles
-                .Where(r => userRoles.Contains(r.RoleName))
-                .Min(r => r.SecurityLevelId);
-
-            return userMinLevel <= item.SecurityLevelId;
+        private class MenuSecurityContext
+        {
+            public bool IsAuthenticated { get; init; }
+            public int? AnonymousLevelId { get; init; }
+            public int? UserMinSecurityLevelId { get; init; }
         }
         public static string GenerateBreadcrumbHtml(ApplicationDbContext db, string currentUrl, ClaimsPrincipal user)
         {

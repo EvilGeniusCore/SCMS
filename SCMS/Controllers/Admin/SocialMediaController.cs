@@ -2,10 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Data;
+using SCMS.Interfaces;
 using SCMS.Services;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SCMS.Controllers.Admin
 {
@@ -15,11 +13,13 @@ namespace SCMS.Controllers.Admin
     {
         private readonly ApplicationDbContext _context;
         private readonly RazorRenderer _razorRenderer;
+        private readonly IThemeEngine _themeEngine;
 
-        public SocialMediaController(ApplicationDbContext context, RazorRenderer razorRenderer)
+        public SocialMediaController(ApplicationDbContext context, RazorRenderer razorRenderer, IThemeEngine themeEngine)
         {
             _context = context;
             _razorRenderer = razorRenderer;
+            _themeEngine = themeEngine;
         }
 
         [HttpGet("/admin/socialmedia")]
@@ -42,7 +42,7 @@ namespace SCMS.Controllers.Admin
                 }
             );
 
-            var wrapped = await ThemeEngine.RenderAsync(new PageContent
+            var wrapped = await _themeEngine.RenderAsync(new PageContent
             {
                 Title = "Manage Social Media Links",
                 HtmlContent = html

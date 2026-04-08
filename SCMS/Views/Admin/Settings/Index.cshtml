@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Site Settings";
-    var themes = ViewData["Themes"] as IEnumerable<dynamic>; 
+    var themes = ViewData["Themes"] as IEnumerable<dynamic> ?? Enumerable.Empty<dynamic>();
 }
 
 <div class="container mt-5">

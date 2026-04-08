@@ -1,44 +1,77 @@
-﻿using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Data;
-using System.Linq;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
-using Microsoft.Extensions.DependencyInjection;
 using SCMS.Classes;
 using Microsoft.AspNetCore.Antiforgery;
 using System.Security.Claims;
-using System.Text;
+using Microsoft.Extensions.Caching.Memory;
+using SCMS.Interfaces;
+using SCMS.Services.Theme;
 
 namespace SCMS.Services
 {
-    public static class ThemeEngine
+    public class ThemeEngine : IThemeEngine
     {
-        public static IHttpContextAccessor HttpContextAccessor { get; set; }
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IThemeManager _themeManager;
+        private readonly IMemoryCache _cache;
+        private readonly ILogger<ThemeEngine> _logger;
 
-        public static async Task<string> RenderAsync(PageContent page, ApplicationDbContext db)
+        public ThemeEngine(IHttpContextAccessor httpContextAccessor, IThemeManager themeManager, IMemoryCache cache, ILogger<ThemeEngine> logger)
+        {
+            _httpContextAccessor = httpContextAccessor;
+            _themeManager = themeManager;
+            _cache = cache;
+            _logger = logger;
+        }
+
+        private async Task<string> ReadThemeFileAsync(string path)
+        {
+            var cacheKey = $"ThemeFile:{path}";
+            if (_cache.TryGetValue(cacheKey, out string? cached) && cached != null)
+                return cached;
+
+            var content = await File.ReadAllTextAsync(path);
+            _cache.Set(cacheKey, content, TimeSpan.FromMinutes(30));
+            return content;
+        }
+
+        public async Task<string> RenderAsync(PageContent page, ApplicationDbContext db)
         {
             var siteSettings = await db.SiteSettings
-            .Include(s => s.SocialLinks)
-            .ThenInclude(l => l.Platform)
-            .FirstOrDefaultAsync();
+                .Include(s => s.SocialLinks)
+                .ThenInclude(l => l.Platform)
+                .FirstOrDefaultAsync();
 
-            var themeName = siteSettings?.Theme?.Name ?? "default";
+            var themeName = await _themeManager.GetCurrentThemeAsync(db);
             var themePath = Path.Combine("Themes", themeName);
 
-            var layout = await File.ReadAllTextAsync(Path.Combine(themePath, "layout.html"));
-            var template = await File.ReadAllTextAsync(Path.Combine(themePath, "templates", "page.html"));
-            var header = await File.ReadAllTextAsync(Path.Combine(themePath, "partials", "header.html"));
-            var footer = await File.ReadAllTextAsync(Path.Combine(themePath, "partials", "footer.html"));
+            string layout, template, header, footer;
+            try
+            {
+                layout = await ReadThemeFileAsync(Path.Combine(themePath, "layout.html"));
+                template = await ReadThemeFileAsync(Path.Combine(themePath, "templates", "page.html"));
+                header = await ReadThemeFileAsync(Path.Combine(themePath, "partials", "header.html"));
+                footer = await ReadThemeFileAsync(Path.Combine(themePath, "partials", "footer.html"));
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger.LogError(ex, "Theme file missing for theme '{ThemeName}' at path '{ThemePath}'", themeName, themePath);
+                return $"<html><body><h1>Theme Error</h1><p>A required theme file is missing: {ex.FileName}</p><hr/>{page.HtmlContent}</body></html>";
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                _logger.LogError(ex, "Theme directory missing for theme '{ThemeName}' at path '{ThemePath}'", themeName, themePath);
+                return $"<html><body><h1>Theme Error</h1><p>Theme directory not found: {themePath}</p><hr/>{page.HtmlContent}</body></html>";
+            }
 
             var faviconPath = Path.Combine("/Themes", themeName, siteSettings?.Theme?.Favicon ?? "favicon.ico");
             var logoUrl = siteSettings?.Logo ?? "/Themes/default/images/SCMS_Logo.png";
 
             var copyright =
                 string.IsNullOrWhiteSpace(siteSettings?.Copyright)
-                ? $"© {DateTime.Now.Year} {siteSettings?.SiteName ?? "SCMS"}"
+                ? $"\u00a9 {DateTime.Now.Year} {siteSettings?.SiteName ?? "SCMS"}"
                 : siteSettings.Copyright;
 
             var tagline = siteSettings?.Tagline ?? "Site Powered by SCMS";
@@ -46,9 +79,10 @@ namespace SCMS.Services
             var bodyContent = page.HtmlContent ?? "";
 
             // Inject TempData["Error"] if it exists
-            var tempData = HttpContextAccessor?.HttpContext?.RequestServices
+            var httpContext = _httpContextAccessor.HttpContext;
+            var tempData = httpContext?.RequestServices
                 .GetService<ITempDataDictionaryFactory>()
-                ?.GetTempData(HttpContextAccessor.HttpContext);
+                ?.GetTempData(httpContext);
 
             var body = template
                 .Replace("<cms:PageTitle />", page.Title ?? "")
@@ -63,7 +97,7 @@ namespace SCMS.Services
                 .Replace("<cms:Copyright />", copyright)
                 .Replace("<cms:Tagline />", tagline);
 
-            var user = HttpContextAccessor?.HttpContext?.User;
+            var user = httpContext?.User;
             bool isAuthenticated = user?.Identity?.IsAuthenticated ?? false;
             string loginStatusHtml = isAuthenticated
                 ? "<a href=\"/portal-logout\">Logout</a>"
@@ -86,7 +120,6 @@ namespace SCMS.Services
                 return siteSettings?.SiteName ?? "Site";
             });
 
-
             // Handle <cms:Menu />
             var menuRegex = new Regex(
                 @"<cms:Menu\s+(?=.*orientation=""(?<orientation>\w+)""\s*)(?=.*group=""(?<group>[^""]+)""\s*).*?\/?>",
@@ -97,8 +130,8 @@ namespace SCMS.Services
             {
                 var orientation = match.Groups["orientation"].Value;
                 var group = match.Groups["group"].Value;
-                var principal = HttpContextAccessor?.HttpContext?.User ?? new ClaimsPrincipal();
-                return MenuBuilder.GenerateMenuHtml(db, group, orientation, principal);
+                var principal = httpContext?.User ?? new ClaimsPrincipal();
+                return MenuBuilder.GenerateMenuHtml(db, group, orientation, principal, themeName);
             });
 
             // Handle <cms:SiteLogo height="..." />
@@ -110,16 +143,20 @@ namespace SCMS.Services
             });
 
             var displayName = user?.Identity?.IsAuthenticated == true
-            ? (HttpContextAccessor?.HttpContext?.User.Identity?.Name ?? "User")
-            : "Guest";
+                ? (httpContext?.User.Identity?.Name ?? "User")
+                : "Guest";
             result = result.Replace("<cms:UserName />", displayName);
 
             // Handle {{ANTIFORGERY_TOKEN}} replacement
             if (result.Contains("{{ANTIFORGERY_TOKEN}}"))
             {
-                var antiforgery = HttpContextAccessor?.HttpContext?.RequestServices.GetService<IAntiforgery>();
-                var tokenSet = antiforgery?.GetAndStoreTokens(HttpContextAccessor.HttpContext);
-                var tokenValue = tokenSet?.RequestToken ?? "";
+                var antiforgery = httpContext?.RequestServices.GetService<IAntiforgery>();
+                var tokenValue = "";
+                if (antiforgery != null && httpContext != null)
+                {
+                    var tokenSet = antiforgery.GetAndStoreTokens(httpContext);
+                    tokenValue = tokenSet.RequestToken ?? "";
+                }
                 result = result.Replace("{{ANTIFORGERY_TOKEN}}", tokenValue);
             }
 
@@ -128,12 +165,12 @@ namespace SCMS.Services
 
             if (socialLinksRegex.IsMatch(result))
             {
-                var templatePath = Path.Combine(themePath, "partials", "social.template.html");
+                var socialTemplatePath = Path.Combine(themePath, "partials", "social.template.html");
                 string renderedSocial = "";
 
-                if (File.Exists(templatePath))
+                if (File.Exists(socialTemplatePath))
                 {
-                    var templateText = await File.ReadAllTextAsync(templatePath);
+                    var templateText = await ReadThemeFileAsync(socialTemplatePath);
 
                     var links = siteSettings?.SocialLinks?.Where(l => l.Platform != null).Select(link =>
                         new Dictionary<string, object>
@@ -160,8 +197,8 @@ namespace SCMS.Services
             // Handle <cms:Breadcrumb />
             result = Regex.Replace(result, @"<cms:Breadcrumb\s*\/>", match =>
             {
-                var requestPath = HttpContextAccessor?.HttpContext?.Request.Path.Value?.Trim('/') ?? "";
-                var principal = HttpContextAccessor?.HttpContext?.User ?? new ClaimsPrincipal();
+                var requestPath = httpContext?.Request.Path.Value?.Trim('/') ?? "";
+                var principal = httpContext?.User ?? new ClaimsPrincipal();
 
                 string html = MenuBuilder.GenerateBreadcrumbHtml(db, requestPath, principal);
 
@@ -188,15 +225,13 @@ namespace SCMS.Services
                 </body>");
             }
 
-
-            // Catch unknown tokens and replace with UNKNOWN Leave at bottom
+            // Catch unknown tokens and replace with UNKNOWN — leave at bottom
             result = Regex.Replace(result, @"<cms:[^>]+\/>", match =>
             {
                 var safeToken = match.Value.Replace("<", "(").Replace(">", ")");
                 return $"<span style='color: red; font-weight: bold;'>[UNKNOWN TOKEN: {safeToken}]</span>";
             });
 
-            // Return the final rendered HTML
             return result;
         }
     }

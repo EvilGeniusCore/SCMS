@@ -2,8 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using SCMS.Data;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using SCMS.Services;
+using SCMS.Interfaces;
 
 namespace SCMS.Controllers
 {
@@ -12,12 +11,14 @@ namespace SCMS.Controllers
     {
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IThemeEngine _themeEngine;
         private readonly ApplicationDbContext _db;
 
-        public AuthController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, ApplicationDbContext db)
+        public AuthController(SignInManager<ApplicationUser> signInManager, UserManager<ApplicationUser> userManager, IThemeEngine themeEngine, ApplicationDbContext db)
         {
             _signInManager = signInManager;
             _userManager = userManager;
+            _themeEngine = themeEngine;
             _db = db;
         }
 
@@ -27,7 +28,7 @@ namespace SCMS.Controllers
             var page = await _db.PageContents.FirstOrDefaultAsync(p => p.PageKey == "login");
             if (page == null) return NotFound();
 
-            var html = await ThemeEngine.RenderAsync(page, _db);
+            var html = await _themeEngine.RenderAsync(page, _db);
             return Content(html, "text/html");
         }
 

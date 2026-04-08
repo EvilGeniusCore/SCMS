@@ -1,7 +1,7 @@
 ﻿@model SCMS.Data.SiteSettings
 @{
     ViewData["Title"] = "Manage Social Media Links";
-    var platforms = ViewData["Platforms"] as IEnumerable<SCMS.Data.SocialMediaPlatform>;
+    var platforms = ViewData["Platforms"] as IEnumerable<SCMS.Data.SocialMediaPlatform> ?? Enumerable.Empty<SCMS.Data.SocialMediaPlatform>();
 }
 
 <div class="container mt-5">

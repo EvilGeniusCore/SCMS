@@ -1,12 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Configuration;
 using SCMS.Data;
+using SCMS.Interfaces;
 using SCMS.Services;
-using System.Linq;
-using System.Threading.Tasks;
-
+using SCMS.Services.Theme;
 
 namespace SCMS.Controllers.Admin
 {
@@ -16,11 +14,15 @@ namespace SCMS.Controllers.Admin
     {
         private readonly ApplicationDbContext _context;
         private readonly RazorRenderer _razorRenderer;
+        private readonly IThemeEngine _themeEngine;
+        private readonly IThemeManager _themeManager;
 
-        public SettingsController(ApplicationDbContext context, RazorRenderer razorRenderer)
+        public SettingsController(ApplicationDbContext context, RazorRenderer razorRenderer, IThemeEngine themeEngine, IThemeManager themeManager)
         {
             _context = context;
             _razorRenderer = razorRenderer;
+            _themeEngine = themeEngine;
+            _themeManager = themeManager;
         }
 
         [HttpGet("/admin/settings")]
@@ -50,7 +52,7 @@ namespace SCMS.Controllers.Admin
                 }
             );
 
-            var wrapped = await ThemeEngine.RenderAsync(new PageContent
+            var wrapped = await _themeEngine.RenderAsync(new PageContent
             {
                 Title = "Site Settings",
                 HtmlContent = html
@@ -87,6 +89,7 @@ namespace SCMS.Controllers.Admin
             }
 
             await _context.SaveChangesAsync();
+            _themeManager.InvalidateCache();
             return Redirect("/admin/settings");
         }
 

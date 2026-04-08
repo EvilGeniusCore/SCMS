@@ -14,7 +14,7 @@ namespace SCMS.Data
         public string? Description { get; set; }
         public string? PreviewImage { get; set; }
         public string? Favicon { get; set; } = "favicon.ico"; // Relative path to the favicon file
-        public DateTime SetOn { get; set; } = DateTime.UtcNow;
+        public DateTime SetOn { get; set; }
     }
 
 }

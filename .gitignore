@@ -68,6 +68,9 @@ wwwroot/Images/
 Thumbs.db
 ehthumbs.db
 
+# Secrets
+secrets/
+
 # Container Files
 /SiteData/
 .env

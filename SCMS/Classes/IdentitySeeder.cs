@@ -1,10 +1,5 @@
-﻿using Microsoft.AspNetCore.Identity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.Identity;
 using SCMS.Data;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace SCMS.Classes
 {
@@ -15,6 +10,7 @@ namespace SCMS.Classes
             var userManager = serviceProvider.GetRequiredService<UserManager<ApplicationUser>>();
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
+            var logger = serviceProvider.GetRequiredService<ILoggerFactory>().CreateLogger("IdentitySeeder");
 
             string adminEmail = configuration["AdminEmail"] ?? Environment.GetEnvironmentVariable("AdminEmail") ?? "admin@example.com";
             string adminPassword = configuration["AdminPassword"] ?? Environment.GetEnvironmentVariable("AdminPassword") ?? "P@ssword1";
@@ -41,7 +37,6 @@ namespace SCMS.Classes
                     MustChangePassword = mustChangePassword
                 };
 
-                // Validate user and password
                 var passwordValidator = serviceProvider.GetRequiredService<IPasswordValidator<ApplicationUser>>();
                 var passwordResult = await passwordValidator.ValidateAsync(userManager, user, adminPassword);
 
@@ -52,9 +47,7 @@ namespace SCMS.Classes
                 {
                     var vresult = await validator.ValidateAsync(userManager, user);
                     if (!vresult.Succeeded)
-                    {
                         userErrors.AddRange(vresult.Errors);
-                    }
                 }
 
                 if (!passwordResult.Succeeded || userErrors.Any())
@@ -70,6 +63,7 @@ namespace SCMS.Classes
                     if (result.Succeeded)
                     {
                         await userManager.AddToRoleAsync(user, "Administrator");
+                        logger.LogInformation("Admin user '{Email}' created successfully", adminEmail);
                     }
                     else
                     {
@@ -79,11 +73,9 @@ namespace SCMS.Classes
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine("[Seeder] Exception during CreateAsync:");
-                    Console.WriteLine(ex.ToString());
+                    logger.LogError(ex, "Exception during admin user creation");
                     throw;
                 }
-
             }
         }
     }

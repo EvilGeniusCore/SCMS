@@ -6,6 +6,7 @@ using SCMS.Services;
 using SCMS.Classes;
 using SCMS.Areas.Identity.Services;
 using SCMS.Services.Auth;
+using SCMS.Services.Theme;
 using SCMS.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -15,6 +16,7 @@ builder.Configuration
     .SetBasePath(Directory.GetCurrentDirectory())
     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
     .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true, reloadOnChange: true)
+    .AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "..", "secrets", "appsettings.secrets.json"), optional: true, reloadOnChange: false)
     .AddEnvironmentVariables();
 
 // Configure database context with SQLite
@@ -45,7 +47,12 @@ builder.Services.AddScoped<SignInManager<ApplicationUser>, CustomSignInManager>(
 builder.Services.AddRazorPages();
 builder.Services.AddControllersWithViews();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+builder.Services.AddMemoryCache();
 builder.Services.AddScoped<IPageService, PageService>();
+builder.Services.AddScoped<IThemeEngine, ThemeEngine>();
+builder.Services.AddSingleton<IThemeManager, SCMS.Services.Theme.ThemeManager>();
+builder.Services.AddScoped<MenuService>();
+builder.Services.AddScoped<PageContentService>();
 builder.Services.AddHttpContextAccessor();
 // Add the user context service
 builder.Services.AddScoped<CurrentUserContext>();
@@ -54,16 +61,13 @@ builder.Services.AddScoped<RazorRenderer>();
 // build the app    
 var app = builder.Build();
 
-ThemeEngine.HttpContextAccessor = app.Services.GetRequiredService<IHttpContextAccessor>();
-
-app.UseMiddleware<CurrentUserMiddleware>();
 // Ensure database folder exists BEFORE context resolution
-if (!Directory.Exists("database"))
+if (!Directory.Exists("Database"))
 {
-    Directory.CreateDirectory("database");
+    Directory.CreateDirectory("Database");
 }
 
-// Seed admin user and apply migrations
+// Apply migrations and seed admin user
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -73,6 +77,8 @@ using (var scope = app.Services.CreateScope())
 }
 
 // Configure middleware
+app.UseMiddleware<CurrentUserMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseMigrationsEndPoint();

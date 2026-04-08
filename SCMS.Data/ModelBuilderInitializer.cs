@@ -76,7 +76,7 @@ namespace SCMS.Services
                             </div>
                         </div>
                     </div>",
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
             },
 
 
@@ -92,7 +92,7 @@ namespace SCMS.Services
                     <p>Thank you for visiting. See you again soon!</p>
                     <a href=""/"" class=""btn btn-primary mt-3"">Return Home</a>
                 </div>",
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new PageContent
                 {
@@ -121,7 +121,7 @@ namespace SCMS.Services
                             <a href=""/Identity/Account/Login"">Already have an account? Login here</a>
                         </div>
                     </div>",
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new PageContent
                 {
@@ -142,7 +142,7 @@ namespace SCMS.Services
                         <a href=""/Identity/Account/Login"">Back to Login</a>
                     </div>
                 </div>",
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new PageContent
                 {
@@ -168,7 +168,7 @@ namespace SCMS.Services
                         <button type=""submit"" class=""btn btn-success"">Reset Password</button>
                     </form>
                 </div>",
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                 },
                 new PageContent
                 {
@@ -194,7 +194,7 @@ namespace SCMS.Services
                         <button type=""submit"" class=""btn btn-success"">Change Password</button>
                     </form>
                 </div>",
-                    LastUpdated = DateTime.UtcNow
+                    LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                 },
                  new PageContent
                  {
@@ -202,7 +202,7 @@ namespace SCMS.Services
                      PageKey = "secure-test",
                      Title = "Secure Test Page",
                      HtmlContent = "<p>This is a secure test page. You may upload a file here to verify access control.</p>",
-                     LastUpdated = DateTime.UtcNow
+                     LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
                  }
             );
         }
@@ -217,7 +217,7 @@ namespace SCMS.Services
                 DisplayName = "Default Theme",
                 Description = "Clean layout with light styling",
                 PreviewImage = "/Themes/Default/preview.png",
-                SetOn = DateTime.UtcNow
+                SetOn = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
             });
 
             // Site Settings
@@ -249,7 +249,7 @@ namespace SCMS.Services
                 HtmlContent = @"
                     <h1 class=""display-4 mb-4"">Welcome</h1>
                     <p class=""lead mb-4"">This is your first SCMS page. Edit it in the admin panel.</p>",                    
-                LastUpdated = DateTime.UtcNow
+                LastUpdated = new DateTime(2025, 6, 8, 0, 0, 0, DateTimeKind.Utc)
             });
 
             // Main Menu Items

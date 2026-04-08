@@ -155,7 +155,7 @@ namespace SCMS.Services.Template
             return -1;
         }
 
-        private static object ResolveProperty(object model, string key)
+        private static object? ResolveProperty(object model, string key)
         {
             if (model is Dictionary<string, object> dict)
                 return dict.TryGetValue(key, out var val) ? val : null;
