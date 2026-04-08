@@ -1,0 +1,282 @@
+/* Clean Blog Theme for SCMS
+   Inspired by Start Bootstrap's Clean Blog (MIT License)
+   Typography: Lora (body/serif), Open Sans (headings/sans-serif)
+   Accent: #0085A1 (teal) */
+
+/* Global */
+body {
+    font-family: 'Lora', 'Times New Roman', serif;
+    font-size: 1.25rem;
+    color: #212529;
+}
+
+p {
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+}
+
+p a {
+    text-decoration: underline;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-weight: 800;
+}
+
+a {
+    color: #212529;
+    transition: all 0.2s;
+}
+
+a:hover {
+    color: #0085A1;
+}
+
+blockquote {
+    font-style: italic;
+    color: #868e96;
+    border-left: 4px solid #0085A1;
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+}
+
+hr.divider {
+    max-width: 3.25rem;
+    border-width: 0.2rem;
+    border-color: #0085A1;
+    margin: 1.5rem auto;
+}
+
+/* Navigation */
+#mainNav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1030;
+    border-bottom: 1px solid transparent;
+    background-color: transparent;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    transition: background-color 0.2s;
+}
+
+#mainNav .navbar-brand {
+    font-weight: 800;
+    color: #fff;
+    text-transform: uppercase;
+}
+
+#mainNav .nav-link {
+    font-size: 0.8rem;
+    font-weight: 800;
+    letter-spacing: 0.0625em;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+#mainNav .nav-link:hover {
+    color: #0085A1;
+}
+
+#mainNav .navbar-toggler {
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 0.75rem;
+    text-transform: uppercase;
+    color: #fff;
+    border-color: #fff;
+}
+
+/* Scrolled state — applied via JS */
+#mainNav.is-fixed {
+    position: fixed;
+    background-color: #fff;
+    border-bottom: 1px solid #e9ecef;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.08);
+    animation: navSlideDown 0.3s ease-out;
+}
+
+#mainNav.is-fixed .navbar-brand {
+    color: #212529;
+}
+
+#mainNav.is-fixed .nav-link {
+    color: #212529;
+}
+
+#mainNav.is-fixed .nav-link:hover {
+    color: #0085A1;
+}
+
+#mainNav.is-fixed .navbar-toggler {
+    color: #212529;
+    border-color: #212529;
+}
+
+@keyframes navSlideDown {
+    from { transform: translateY(-100%); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+/* Responsive navbar: white background on mobile when expanded */
+@media (max-width: 991.98px) {
+    #mainNav {
+        background-color: #fff;
+        border-bottom: 1px solid #e9ecef;
+    }
+    #mainNav .navbar-brand { color: #212529; }
+    #mainNav .nav-link { color: #212529; }
+    #mainNav .navbar-toggler { color: #212529; border-color: #212529; }
+}
+
+/* Masthead */
+.masthead {
+    position: relative;
+    background-color: #6c757d;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding-top: 5rem;
+    padding-bottom: 3rem;
+    margin-bottom: 0;
+}
+
+.masthead::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.masthead .container {
+    position: relative;
+}
+
+.masthead .site-heading,
+.masthead .post-heading,
+.masthead .page-heading {
+    color: #fff;
+    padding: 50px 0 30px;
+}
+
+@media (min-width: 992px) {
+    .masthead {
+        padding-top: 6rem;
+        padding-bottom: 4rem;
+    }
+    .masthead .site-heading,
+    .masthead .post-heading,
+    .masthead .page-heading {
+        padding: 60px 0;
+    }
+}
+
+.masthead .site-heading h1,
+.masthead .page-heading h1 {
+    font-size: 3rem;
+    margin-top: 0;
+}
+
+@media (min-width: 992px) {
+    .masthead .site-heading h1,
+    .masthead .page-heading h1 {
+        font-size: 5rem;
+    }
+}
+
+.masthead .subheading {
+    display: block;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 300;
+    margin-top: 0.625rem;
+}
+
+/* Post / Article content */
+article {
+    margin-top: 3.75rem;
+}
+
+article .section-heading {
+    font-size: 2.25rem;
+    font-weight: 700;
+    margin-top: 3.75rem;
+}
+
+article img {
+    max-width: 100%;
+    height: auto;
+    margin: 1.5rem 0;
+}
+
+article .caption {
+    display: block;
+    font-size: 0.875rem;
+    font-style: italic;
+    color: #868e96;
+    margin-top: -1rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+
+/* Footer */
+footer {
+    padding: 3.125rem 0;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+footer .small-social-links {
+    margin-bottom: 1.5625rem;
+}
+
+footer .small-social-links a {
+    text-decoration: none;
+    color: #212529;
+}
+
+footer .small-social-links a:hover {
+    color: #0085A1;
+}
+
+footer .fa-stack {
+    font-size: 1.25rem;
+}
+
+footer .fa-stack .fa-circle {
+    color: #212529;
+}
+
+footer .fa-stack .fa-inverse {
+    color: #fff;
+}
+
+footer .fa-stack:hover .fa-circle {
+    color: #0085A1;
+}
+
+/* Dropdown menus */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-item:hover {
+    color: #0085A1;
+    background-color: #f8f9fa;
+}
+
+/* Alert styling */
+.alert {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 1rem;
+}
+
+/* Breadcrumb override */
+.breadcrumb {
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-size: 0.85rem;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+}

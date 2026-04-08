@@ -5,10 +5,12 @@
     height: auto;
 }
 
-/* Login/Logout button spacing */
 .login-status {
     font-size: 0.9rem;
     white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 /* Footer slight adjustments */
@@ -21,7 +23,7 @@
 
 /* Main site background and content spacing */
 body {
-    background-color: #f5f5f5;
+    background-color: #ffffff;
 }
 
 /* Main content area adjustments */
@@ -36,3 +38,5 @@ body {
 .navbar-nav .nav-link:hover {
     text-decoration: underline;
 }
+
+

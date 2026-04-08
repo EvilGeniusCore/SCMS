@@ -1,34 +1,34 @@
-﻿using System.IO;
-
 namespace SCMS.Classes
 {
     public static class ThemeAssetManager
     {
         public static void EnsureThemeAssets()
         {
-            var sourcePath = Path.Combine(Directory.GetCurrentDirectory(), "Themes", "default");
-            var targetPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Themes", "default");
+            var themesRoot = Path.Combine(Directory.GetCurrentDirectory(), "Themes");
+            if (!Directory.Exists(themesRoot)) return;
 
             var assetFolders = new[] { "css", "js", "images", "fonts" };
 
-            foreach (var folder in assetFolders)
+            foreach (var themeDir in Directory.GetDirectories(themesRoot))
             {
-                var srcDir = Path.Combine(sourcePath, folder);
-                var tgtDir = Path.Combine(targetPath, folder);
+                var themeName = Path.GetFileName(themeDir);
+                var targetBase = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Themes", themeName);
 
-                if (!Directory.Exists(tgtDir))
+                foreach (var folder in assetFolders)
+                {
+                    var srcDir = Path.Combine(themeDir, folder);
+                    var tgtDir = Path.Combine(targetBase, folder);
+
+                    if (!Directory.Exists(srcDir)) continue;
+
                     Directory.CreateDirectory(tgtDir);
 
-                if (Directory.Exists(srcDir))
-                {
                     foreach (var file in Directory.GetFiles(srcDir))
                     {
-                        var fileName = Path.GetFileName(file);
-                        var destFile = Path.Combine(tgtDir, fileName);
-
-                        if (!File.Exists(destFile))
+                        var destFile = Path.Combine(tgtDir, Path.GetFileName(file));
+                        if (!File.Exists(destFile) || File.GetLastWriteTimeUtc(file) > File.GetLastWriteTimeUtc(destFile))
                         {
-                            File.Copy(file, destFile);
+                            File.Copy(file, destFile, overwrite: true);
                         }
                     }
                 }

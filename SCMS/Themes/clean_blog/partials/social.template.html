@@ -1,0 +1,17 @@
+<!--
+    Social links for Clean Blog footer.
+    Renders as circular icon buttons matching the Clean Blog style.
+-->
+
+<ul class="list-inline text-center">
+    {{#each Items}}
+    <li class="list-inline-item">
+        <a href="{{Url}}" target="_blank" rel="noopener noreferrer" title="{{Name}}">
+            <span class="fa-stack fa-lg">
+                <i class="fas fa-circle fa-stack-2x"></i>
+                <i class="{{IconClass}} fa-stack-1x fa-inverse"></i>
+            </span>
+        </a>
+    </li>
+    {{/each}}
+</ul>

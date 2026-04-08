@@ -1,0 +1,8 @@
+{
+  "name": "clean_blog",
+  "displayName": "Clean Blog",
+  "description": "A clean, minimal blog theme inspired by Start Bootstrap's Clean Blog. Serif body type, full-width hero headers, and generous whitespace.",
+  "previewImage": "/Themes/clean_blog/images/preview.png",
+  "defaultTemplate": "page.html",
+  "layout": "layout.html"
+}

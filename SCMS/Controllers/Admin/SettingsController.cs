@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Data;
@@ -28,15 +29,11 @@ namespace SCMS.Controllers.Admin
         [HttpGet("/admin/settings")]
         public async Task<IActionResult> Settings()
         {
+            await SyncThemesFromDisk();
+
             var settings = await _context.SiteSettings.FirstOrDefaultAsync() ?? new SiteSettings();
 
             var themes = await _context.ThemeSettings.ToListAsync();
-            ViewData["Themes"] = themes.Select(t => new
-            {
-                t.Id,
-                DisplayName = t.DisplayName ?? t.Name,
-                IsSelected = settings.ThemeId == t.Id
-            }).ToList();
 
             var html = await _razorRenderer.RenderViewAsync(
                 HttpContext,
@@ -59,6 +56,50 @@ namespace SCMS.Controllers.Admin
             }, _context);
 
             return Content(wrapped, "text/html");
+        }
+
+        private async Task SyncThemesFromDisk()
+        {
+            var themesDir = Path.Combine(Directory.GetCurrentDirectory(), "Themes");
+            if (!Directory.Exists(themesDir)) return;
+
+            var existingThemes = await _context.ThemeSettings.ToListAsync();
+            var existingNames = existingThemes.Select(t => t.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var added = false;
+
+            foreach (var dir in Directory.GetDirectories(themesDir))
+            {
+                var configPath = Path.Combine(dir, "theme.config.json");
+                if (!System.IO.File.Exists(configPath)) continue;
+
+                var folderName = Path.GetFileName(dir);
+                if (existingNames.Contains(folderName)) continue;
+
+                try
+                {
+                    var json = await System.IO.File.ReadAllTextAsync(configPath);
+                    var config = JsonSerializer.Deserialize<JsonElement>(json);
+
+                    var theme = new ThemeSetting
+                    {
+                        Name = config.TryGetProperty("name", out var n) ? n.GetString() ?? folderName : folderName,
+                        DisplayName = config.TryGetProperty("displayName", out var dn) ? dn.GetString() ?? folderName : folderName,
+                        Description = config.TryGetProperty("description", out var d) ? d.GetString() : null,
+                        PreviewImage = config.TryGetProperty("previewImage", out var p) ? p.GetString() : null,
+                        SetOn = DateTime.UtcNow
+                    };
+
+                    _context.ThemeSettings.Add(theme);
+                    added = true;
+                }
+                catch
+                {
+                    // Skip themes with malformed config
+                }
+            }
+
+            if (added)
+                await _context.SaveChangesAsync();
         }
 
         [HttpPost("save")]

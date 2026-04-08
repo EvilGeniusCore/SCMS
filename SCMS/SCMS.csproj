@@ -16,6 +16,10 @@
     <Content Include="Themes\Default\partials\footer.html" />
     <Content Include="Themes\Default\partials\header.html" />
     <Content Include="Themes\Default\templates\page.html" />
+    <Content Include="Themes\clean_blog\layout.html" />
+    <Content Include="Themes\clean_blog\partials\footer.html" />
+    <Content Include="Themes\clean_blog\partials\header.html" />
+    <Content Include="Themes\clean_blog\templates\page.html" />
   </ItemGroup>
 
   <ItemGroup>
