@@ -1,12 +1,14 @@
 services:
   scms:
-    build: .
+    image: ghcr.io/evilgeniusgames/scms:latest
     ports:
       - "8080:80"
     environment:
+      - ASPNETCORE_ENVIRONMENT=Production
       - AdminEmail=${AdminEmail}
       - AdminPassword=${AdminPassword}
-      - EnableAdminSeeding=${EnableAdminSeeding}
+      - AdminUsername=${AdminUsername}
     volumes:
-      - ./SiteDate/Database:/database
-      - ./SiteDate/wwwroot/images:/wwwroot/images
+      - ./SiteData/Database:/app/data
+      - ./SiteData/uploads:/app/wwwroot/uploads
+    restart: unless-stopped
