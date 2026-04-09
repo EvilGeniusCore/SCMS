@@ -139,12 +139,12 @@ These are not bugs or debt — they're feature gaps to address when the core is 
 - [x] Credentials moved to gitignored `secrets/` folder
 - [x] VS Code launch.json and tasks.json for F5 debugging
 - [ ] Content versioning / draft-publish workflow
-- [ ] SEO basics: sitemap.xml, robots.txt, meta tag management per page
+- [x] SEO basics: sitemap.xml, robots.txt, meta description/keywords injected via `<cms:MetaTags />`
 - [ ] Plugin/extension system (referenced in README but not implemented)
 - [ ] Internationalization (i18n) support
 - [ ] Image optimization and responsive image serving
 - [ ] Temp upload folder cleanup (periodic job or on-save sweep)
-- [ ] Nested menu depth: current hard limit on rendering depth needs to be configurable or removed
+- [x] Nested menu depth: removed all depth limits, recursive `SubMenuHtml` rendering with CSS multilevel dropdowns
 - [ ] Change logging system to Serilog, and have written logs that recycle on a size based system
 
 ## Build Status

@@ -32,8 +32,12 @@ namespace SCMS.Classes
             // Convert to MenuRenderModel
             var model = new MenuRenderModel
             {
-                Items = topLevelItems.Select(t => ConvertToModel(t, allItems, db, securityContext)).ToList()
+                Items = topLevelItems.Select(t => ConvertToModel(t, allItems, db, securityContext, 0)).ToList()
             };
+
+            // Pre-render recursive submenu HTML for each item
+            foreach (var item in model.Items)
+                RenderSubMenuHtml(item);
 
             var context = new Dictionary<string, object>
             {
@@ -66,7 +70,7 @@ namespace SCMS.Classes
             }
         }
         // Converts a MenuItem to a MenuItemModel for rendering
-        private static MenuItemModel ConvertToModel(MenuItem item, List<MenuItem> allItems, ApplicationDbContext db, MenuSecurityContext securityContext)
+        private static MenuItemModel ConvertToModel(MenuItem item, List<MenuItem> allItems, ApplicationDbContext db, MenuSecurityContext securityContext, int depth)
         {
             string url = "#";
 
@@ -81,7 +85,7 @@ namespace SCMS.Classes
             var children = allItems
                 .Where(m => m.ParentId == item.Id && IsMenuItemAuthorized(m, securityContext))
                 .OrderBy(m => m.Order)
-                .Select(child => ConvertToModel(child, allItems, db, securityContext))
+                .Select(child => ConvertToModel(child, allItems, db, securityContext, depth + 1))
                 .ToList();
 
             return new MenuItemModel
@@ -89,10 +93,49 @@ namespace SCMS.Classes
                 Text = item.Title,
                 Url = url,
                 Target = url.StartsWith("http", StringComparison.OrdinalIgnoreCase) ? "_blank" : null,
-                Items = children
+                Items = children,
+                Depth = depth
             };
         }
 
+
+        /// <summary>
+        /// Recursively renders submenu HTML for a MenuItemModel and all its descendants.
+        /// Populates the SubMenuHtml property so templates can use {{SubMenuHtml}} for unlimited depth.
+        /// </summary>
+        private static void RenderSubMenuHtml(MenuItemModel item)
+        {
+            if (!item.HasChildren)
+            {
+                item.SubMenuHtml = "";
+                return;
+            }
+
+            // Recurse children first so their SubMenuHtml is ready
+            foreach (var child in item.Items)
+                RenderSubMenuHtml(child);
+
+            var sb = new StringBuilder();
+            sb.Append("<ul class=\"dropdown-menu\">");
+            foreach (var child in item.Items)
+            {
+                if (child.HasChildren)
+                {
+                    var target = child.Target != null ? $" target=\"{child.Target}\"" : "";
+                    sb.Append($"<li class=\"dropdown-submenu\">");
+                    sb.Append($"<a class=\"dropdown-item dropdown-toggle\" href=\"{child.Url}\"{target}>{child.Text}</a>");
+                    sb.Append(child.SubMenuHtml);
+                    sb.Append("</li>");
+                }
+                else
+                {
+                    var target = child.Target != null ? $" target=\"{child.Target}\"" : "";
+                    sb.Append($"<li><a class=\"dropdown-item\" href=\"{child.Url}\"{target}>{child.Text}</a></li>");
+                }
+            }
+            sb.Append("</ul>");
+            item.SubMenuHtml = sb.ToString();
+        }
 
         // Recursively builds HTML for a single menu item, including any nested children
         private static string BuildMenuItem(ApplicationDbContext db, MenuItem item, List<MenuItem> allItems)

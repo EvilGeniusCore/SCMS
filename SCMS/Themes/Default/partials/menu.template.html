@@ -1,16 +1,8 @@
-﻿<!--
-    This menu template is designed for the default Bootstrap-based theme.
-
-    ⚠️ Important Notes:
-    - Bootstrap 5 dropdowns open on *click*, not hover.
-    - A parent menu item with children (submenus) will act only as a toggle; its own link will not function.
-    - This means any content added to such items in the admin interface (e.g., page or URL) will be ignored at runtime.
-    - Bootstrap 5 also does not support multi-level dropdowns natively.
-      You can create nested menu levels in the admin system, but only the first level will render.
-
-    For full multilevel and hover-driven navigation support, use or build a Tailwind-based theme.
+<!--
+    Default Bootstrap menu template with unlimited nesting depth.
+    Uses {{SubMenuHtml}} for pre-rendered recursive submenus.
+    Hover-driven via CSS — no Bootstrap JS dropdown dependency for submenus.
 -->
-
 
 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
     {{#each Items}}
@@ -19,13 +11,7 @@
         <a class="nav-link dropdown-toggle" href="{{Url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false" {{#if Target}} target="{{Target}}" {{/if}}>
             {{Text}}
         </a>
-        <ul class="dropdown-menu">
-            {{#each Items}}
-            <li>
-                <a class="dropdown-item" href="{{Url}}" {{#if Target}} target="{{Target}}" {{/if}}>{{Text}}</a>
-            </li>
-            {{/each}}
-        </ul>
+        {{SubMenuHtml}}
     </li>
     {{else}}
     <li class="nav-item">

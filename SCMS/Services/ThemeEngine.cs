@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore;
 using SCMS.Data;
@@ -88,12 +89,20 @@ namespace SCMS.Services
                 .Replace("<cms:PageTitle />", page.Title ?? "")
                 .Replace("<cms:Content />", bodyContent);
 
+            // Build meta tags from page data
+            var metaTags = new StringBuilder();
+            if (!string.IsNullOrWhiteSpace(page.MetaDescription))
+                metaTags.AppendLine($"    <meta name=\"description\" content=\"{System.Net.WebUtility.HtmlEncode(page.MetaDescription)}\">");
+            if (!string.IsNullOrWhiteSpace(page.MetaKeywords))
+                metaTags.AppendLine($"    <meta name=\"keywords\" content=\"{System.Net.WebUtility.HtmlEncode(page.MetaKeywords)}\">");
+
             var result = layout
                 .Replace("<cms:Header />", header)
                 .Replace("<cms:Footer />", footer)
                 .Replace("<cms:PageTitle />", page.Title ?? "")
                 .Replace("<cms:Content />", body)
                 .Replace("<cms:Favicon />", $"<link rel=\"icon\" href=\"{faviconPath}\" type=\"image/x-icon\">")
+                .Replace("<cms:MetaTags />", metaTags.ToString())
                 .Replace("<cms:Copyright />", copyright)
                 .Replace("<cms:Tagline />", tagline);
 

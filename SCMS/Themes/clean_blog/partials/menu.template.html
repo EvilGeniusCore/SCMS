@@ -1,7 +1,6 @@
 <!--
-    Clean Blog menu template.
-    Renders inside the navbar collapse area.
-    Bootstrap 5 dropdowns: click-based, single level only.
+    Clean Blog menu template with unlimited nesting depth.
+    Uses {{SubMenuHtml}} for pre-rendered recursive submenus.
 -->
 
 <ul class="navbar-nav ms-auto py-2 py-lg-0">
@@ -11,13 +10,7 @@
         <a class="nav-link dropdown-toggle text-uppercase px-lg-3" href="{{Url}}" role="button" data-bs-toggle="dropdown" aria-expanded="false" {{#if Target}} target="{{Target}}" {{/if}}>
             {{Text}}
         </a>
-        <ul class="dropdown-menu">
-            {{#each Items}}
-            <li>
-                <a class="dropdown-item" href="{{Url}}" {{#if Target}} target="{{Target}}" {{/if}}>{{Text}}</a>
-            </li>
-            {{/each}}
-        </ul>
+        {{SubMenuHtml}}
     </li>
     {{else}}
     <li class="nav-item">

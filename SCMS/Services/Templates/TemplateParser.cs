@@ -9,7 +9,7 @@ namespace SCMS.Services.Template
 {
     public class TemplateParser
     {
-        private const int MaxRecursionDepth = 25;
+        private const int MaxRecursionDepth = 100;
 
         public string Parse(string template, Dictionary<string, object> context)
         {
