@@ -5,6 +5,7 @@ using SCMS.Interfaces;
 using SCMS.Services;
 using SCMS.Classes;
 using SCMS.Areas.Identity.Services;
+using SCMS.Abstractions;
 using SCMS.Services.Auth;
 using SCMS.Services.Theme;
 using SCMS.Middleware;
@@ -54,11 +55,35 @@ builder.Services.AddSingleton<IThemeManager, SCMS.Services.Theme.ThemeManager>()
 builder.Services.AddScoped<MenuService>();
 builder.Services.AddScoped<PageContentService>();
 builder.Services.AddHttpContextAccessor();
+
+// Register built-in token handlers
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.PageTitleTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.ContentTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.FaviconTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.MetaTagsTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.CopyrightTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.TaglineTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.LoginStatusTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.UserNameTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.ErrorMessageTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.SiteNameTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.SiteLogoTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.MenuTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.AntiforgeryTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.SocialLinksTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.BreadcrumbTokenHandler>();
+builder.Services.AddSingleton<ITokenHandler, SCMS.Services.TokenHandlers.ModuleAdminMenuTokenHandler>();
 // Add the user context service
 builder.Services.AddScoped<CurrentUserContext>();
 // register the RazorRender for admin pages to use client themes.
 builder.Services.AddScoped<RazorRenderer>();
-// build the app    
+
+// Discover and load external modules from /Modules folder
+using var startupLoggerFactory = LoggerFactory.Create(b => b.AddConsole());
+var startupLogger = startupLoggerFactory.CreateLogger("Startup");
+ModuleLoader.DiscoverAndRegister(builder.Services, startupLogger);
+
+// build the app
 var app = builder.Build();
 
 // Ensure database folder exists BEFORE context resolution
@@ -77,6 +102,9 @@ using (var scope = app.Services.CreateScope())
     else
         db.Database.EnsureCreated();
     await IdentitySeeder.SeedAdminUserAsync(services);
+
+    // Run module database setup after core migrations
+    await ModuleLoader.RunModuleDbSetupAsync(services, startupLogger);
 }
 
 // Configure middleware

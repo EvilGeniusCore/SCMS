@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SCMS\SCMS.csproj" />
     <ProjectReference Include="..\SCMS.Data\SCMS.Data.csproj" />
+    <ProjectReference Include="..\SCMS.Abstractions\SCMS.Abstractions.csproj" />
   </ItemGroup>
 
 </Project>

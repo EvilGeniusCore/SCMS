@@ -3,10 +3,12 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using SCMS.Abstractions;
 using SCMS.Data;
 using SCMS.Interfaces;
 using SCMS.Services;
 using SCMS.Services.Theme;
+using SCMS.Services.TokenHandlers;
 using SCMS.Tests.Helpers;
 
 namespace SCMS.Tests.Services
@@ -19,11 +21,29 @@ namespace SCMS.Tests.Services
         private readonly ApplicationDbContext _db;
         private readonly ThemeEngine _engine;
 
+        private static IEnumerable<ITokenHandler> AllBuiltInHandlers() => new ITokenHandler[]
+        {
+            new PageTitleTokenHandler(),
+            new ContentTokenHandler(),
+            new FaviconTokenHandler(),
+            new MetaTagsTokenHandler(),
+            new CopyrightTokenHandler(),
+            new TaglineTokenHandler(),
+            new LoginStatusTokenHandler(),
+            new UserNameTokenHandler(),
+            new ErrorMessageTokenHandler(),
+            new SiteNameTokenHandler(),
+            new SiteLogoTokenHandler(),
+            new MenuTokenHandler(),
+            new AntiforgeryTokenHandler(),
+            new SocialLinksTokenHandler(),
+            new BreadcrumbTokenHandler()
+        };
+
         public ThemeEngineTests()
         {
             _originalDir = Directory.GetCurrentDirectory();
 
-            // Create isolated temp directory with theme files
             _tempDir = Path.Combine(Path.GetTempPath(), "scms_test_" + Guid.NewGuid().ToString("N"));
             var themePath = Path.Combine(_tempDir, "Themes", "default");
             Directory.CreateDirectory(Path.Combine(themePath, "templates"));
@@ -38,12 +58,10 @@ namespace SCMS.Tests.Services
             File.WriteAllText(Path.Combine(themePath, "partials", "footer.html"),
                 "<footer><cms:Copyright /> <cms:Tagline /></footer>");
 
-            // ThemeEngine resolves files relative to CWD
             Directory.SetCurrentDirectory(_tempDir);
 
             _db = TestDbContextFactory.CreateWithSeedData();
 
-            // Build a minimal service provider for HttpContext.RequestServices
             var services = new ServiceCollection();
             services.AddLogging();
             var sp = services.BuildServiceProvider();
@@ -59,7 +77,7 @@ namespace SCMS.Tests.Services
             var cache = new MemoryCache(new MemoryCacheOptions());
             var logger = new Mock<ILogger<ThemeEngine>>();
 
-            _engine = new ThemeEngine(httpContextAccessor.Object, themeManager.Object, cache, logger.Object);
+            _engine = new ThemeEngine(httpContextAccessor.Object, themeManager.Object, cache, logger.Object, AllBuiltInHandlers());
         }
 
         public void Dispose()
@@ -127,14 +145,13 @@ namespace SCMS.Tests.Services
             layout = layout.Replace("</body>", "<cms:UnknownWidget /></body>");
             File.WriteAllText(layoutPath, layout);
 
-            // Fresh engine with empty cache
             var sp2 = new ServiceCollection().AddLogging().BuildServiceProvider();
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             httpContextAccessor.Setup(a => a.HttpContext).Returns(new DefaultHttpContext { RequestServices = sp2 });
             var themeManager = new Mock<IThemeManager>();
             themeManager.Setup(t => t.GetCurrentThemeAsync(It.IsAny<ApplicationDbContext>())).ReturnsAsync("default");
             var freshEngine = new ThemeEngine(httpContextAccessor.Object, themeManager.Object,
-                new MemoryCache(new MemoryCacheOptions()), new Mock<ILogger<ThemeEngine>>().Object);
+                new MemoryCache(new MemoryCacheOptions()), new Mock<ILogger<ThemeEngine>>().Object, AllBuiltInHandlers());
 
             var page = new PageContent { Title = "Test", HtmlContent = "" };
             var result = await freshEngine.RenderAsync(page, _db);
@@ -151,7 +168,7 @@ namespace SCMS.Tests.Services
             var themeManager = new Mock<IThemeManager>();
             themeManager.Setup(t => t.GetCurrentThemeAsync(It.IsAny<ApplicationDbContext>())).ReturnsAsync("nonexistent_theme");
             var engine = new ThemeEngine(httpContextAccessor.Object, themeManager.Object,
-                new MemoryCache(new MemoryCacheOptions()), new Mock<ILogger<ThemeEngine>>().Object);
+                new MemoryCache(new MemoryCacheOptions()), new Mock<ILogger<ThemeEngine>>().Object, AllBuiltInHandlers());
 
             var page = new PageContent { Title = "Test", HtmlContent = "<p>Content</p>" };
             var result = await engine.RenderAsync(page, _db);

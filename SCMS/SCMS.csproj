@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SCMS.Data\SCMS.Data.csproj" />
+    <ProjectReference Include="..\SCMS.Abstractions\SCMS.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

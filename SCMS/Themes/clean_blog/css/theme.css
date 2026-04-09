@@ -1,11 +1,11 @@
 /* Clean Blog Theme for SCMS
    Inspired by Start Bootstrap's Clean Blog (MIT License)
-   Typography: Lora (body/serif), Open Sans (headings/sans-serif)
+   Typography: Open Sans throughout
    Accent: #0085A1 (teal) */
 
 /* Global */
 body {
-    font-family: 'Lora', 'Times New Roman', serif;
+    font-family: 'Open Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: 1.25rem;
     color: #212529;
 }
